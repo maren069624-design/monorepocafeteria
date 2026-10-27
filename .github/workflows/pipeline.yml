@@ -1,0 +1,44 @@
+name: Pipeline de aceptación
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  pruebas-aceptacion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Obtener el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Instalar dependencias de la aplicación
+        working-directory: app
+        run: npm ci
+
+      - name: Instalar dependencias de Playwright
+        working-directory: test
+        run: npm ci
+
+      - name: Instalar Chromium y dependencias del sistema
+        working-directory: test
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar pruebas de aceptación
+        working-directory: test
+        run: npx playwright test --grep "@acceptanceTest"
+
+      - name: Publicar reporte de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: test/playwright-report/
+          retention-days: 30
